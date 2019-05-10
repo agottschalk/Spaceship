@@ -1,0 +1,174 @@
+<html>
+<head>
+	<title>Final Part 2</title>
+	<style>
+		#game { 	position: 			absolute;
+					top: 				10px;
+					left: 				10px;
+					background-color: 	black;
+					width: 				450px;
+					height: 			300px; 
+					background-image:	url("stars.png"); }
+		#player {	position:			absolute; 
+					top:				144px;
+					left:				25px; }
+		#start {	position:			absolute;
+					top:				125px;
+					left:				175px;
+					z-index:			1;
+					width:				100px;
+					height:				50px; }
+		#explosion{ position:			absolute;
+					visibility:			hidden; }
+		.enemy {	position:			absolute; 
+					top:				144px;
+					left:				-1px; }
+	</style>
+	<script>
+		var gameLoop;	//interval active while game is running
+		
+		var game;	//div element containing all game elements
+		
+		var targetY = 144;	//y position needed to line ship up with cursor
+		
+		var ship;
+		var shipSpeed = 5;	//max vertical distance ship can move each frame
+		
+		var enemies = new Array();	//collection of all enemies, refreshed once per frame
+		var enemySpeed = 3;	//distance enemies move each frame
+		
+		var explosionFrame = 1;	//current animation frame of explosion
+		
+		//sets values for global variables and starts game loop
+		function start() {
+			game = document.getElementById("game");
+			ship = document.getElementById("player");
+			reset();
+			addEnemy(Math.floor(Math.random()*268));
+			gameLoop = setInterval(function() {
+				moveShip();
+				moveEnemies();
+				checkCollisions();
+				removeEnemiesAtEnd();
+				addNewEnemies();
+				enemies = document.getElementsByClassName("enemy");
+			}, 16);
+			document.getElementById("start").style.visibility = "hidden";
+			console.log(game);
+		}
+		
+		//clears level of all objects and resets ship
+		function reset() {
+			while(enemies.length > 0) {
+				game.removeChild(enemies[0]);
+			}
+			ship.style.visibility = "visible";
+			explosionFrame = 1;
+		}
+		
+		//checks value of targetY and moves ship towards that position
+		function moveShip() {
+			var y = ship.offsetTop;
+			
+			//cap speed, bounds
+			var newY;
+			if(targetY < y) {
+				newY = (y - targetY > shipSpeed) ? (y - shipSpeed) : (targetY);
+				newY = (newY < 0) ? 0 : newY;
+			} else {
+				newY = (targetY - y > shipSpeed) ? (y + shipSpeed) : (targetY);
+				newY = (newY > 268) ? 268 : newY;
+			}
+			
+			//move ship
+			ship.style.top = newY + "px";
+		}
+		
+		//moves all enemies left according to the 'enemySpeed' variable defined above
+		function moveEnemies() {
+			for(var i=0; i < enemies.length; i++) {
+				var x = enemies[i].offsetLeft - enemySpeed;
+				enemies[i].style.left = x;
+			}
+		}
+		
+		//checks if enemies have collided with ship
+		function checkCollisions(){
+			var shipY = ship.offsetTop;
+			
+			for(var i=0; i < enemies.length; i++) {
+				if(enemies[i].offsetLeft < 57) {
+					var y = enemies[i].offsetTop;
+					if(y < shipY + 32
+						&& y + 32 > shipY) {
+						ship.style.visibility = "hidden";
+						var explosion = document.getElementById("explosion");
+						explosion.style.top = ship.offsetTop - 7;
+						explosion.style.left = ship.offsetLeft - 7;
+						clearInterval(gameLoop);
+						gameLoop = setInterval(explode, 30);
+					}
+				}
+			}
+		}
+		
+		//removes enemies that have reached left side of level
+		function removeEnemiesAtEnd() {
+			for(var i=0; i < enemies.length; i++) {
+				if(enemies[i].offsetLeft < 0) {
+					game.removeChild(enemies[i]);
+				}
+			}
+		}
+		
+		//random chance to add enemy at random location
+		function addNewEnemies() {
+			if(Math.random() < .04) {
+				addEnemy(Math.floor(Math.random()*268));
+			}
+		}
+		
+		//adds enemy at position x: 418 and y: 'startPosition'
+		function addEnemy(startPosition){
+			var node = document.createElement("img");
+			document.getElementById("game").appendChild(node);
+			node.src = "spike_ball_E1.png";
+			node.className = "enemy";
+			node.alt = "spikeball";
+			node.height = "32";
+			node.width = "32";
+			node.style.position = "absolute";
+			node.style.top = startPosition + "px";
+			node.style.left = 418 + "px";
+		}
+		
+		//controls explosion animation when player dies
+		function explode() {
+			var explosion = document.getElementById("explosion");
+			explosion.style.visibility = "visible";
+			explosion.src = "explosion-" + explosionFrame + ".png";
+			explosionFrame++;
+			console.log(explosionFrame);
+			if(explosionFrame > 11) {
+				explosion.style.visibility = "hidden"
+				clearInterval(gameLoop);
+				var button = document.getElementById("start");
+				button.style.visibility = "visible";
+				button.value = "Restart";
+			}
+		}
+		
+		//sets targetY such that the middle of the ship will be aligned with the cursor
+		function setTargetY(event) {
+			targetY = event.pageY - 26;
+		}
+	</script>
+</head>
+<body onload="setUp()">
+	<div id="game" onmousemove="setTargetY(event)">
+		<img src="Dark-Grey-04.png" id="player" alt="ship" height="32" width="32" />
+		<img src="explosion-1.png" id="explosion" alt="explosion" height="46" width="46" />
+		<input type="button" id="start" value="Start" onclick="start()" />
+	</div>
+</body>
+</html>
